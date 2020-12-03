@@ -6,9 +6,9 @@ const FormErrors = props => {
     <div>
       {Object.keys(props.formErrors).map((formErrorField) => {
         return (
-          props.formErrors[formErrorField].map((error) => {
+          props.formErrors[formErrorField].map((error, index) => {
             return (
-              <p>{formErrorField} {error}</p>
+              <p key={index}>{formErrorField} {error}</p>
             )
           })
         )
