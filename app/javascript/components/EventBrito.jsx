@@ -4,6 +4,7 @@ import axios from 'axios'
 
 import EventForm from './EventForm'
 import EventList from './EventsList'
+import FormErrors from './FormErrors'
 
 const EventBrito = props => {
   const [events, setEvents] = React.useState(props.events)
@@ -12,6 +13,7 @@ const EventBrito = props => {
     start_datetime: '',
     location: ''
   })
+  const [formErrors, setFormErrors] = React.useState({})
 
   const addNewEvent = (data) => {
     const newEvents = [data, ...events].sort((a, b) =>
@@ -19,6 +21,10 @@ const EventBrito = props => {
     );
 
     setEvents(newEvents)
+  }
+
+  const resetFormErrors = () => {
+    setFormErrors({})
   }
 
   const handleInputChange = (e) => {
@@ -42,14 +48,17 @@ const EventBrito = props => {
     })
     .then(response => {
       addNewEvent(response.data)
+      resetFormErrors();
     })
     .catch(error => {
-      console.log(error)
+      console.log(error.response.data)
+      setFormErrors(error.response.data)
     })
   }
 
   return (
   <div>
+    <FormErrors formErrors = {formErrors} />
     <EventForm
       title={event.title}
       start_datetime={event.start_datetime}
