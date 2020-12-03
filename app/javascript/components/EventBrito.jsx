@@ -13,7 +13,10 @@ const EventBrito = props => {
     start_datetime: '',
     location: ''
   })
-  const [formErrors, setFormErrors] = React.useState({})
+  const [formErrors, setFormErrors] = React.useState({});
+  const [formValid, setFormValid] = React.useState(false);
+
+  const initialRender = React.useRef(true);
 
   const addNewEvent = (data) => {
     const newEvents = [data, ...events].sort((a, b) =>
@@ -31,6 +34,7 @@ const EventBrito = props => {
     e.preventDefault();
     const name = e.target.name;
     const newEvent = { ...event }
+
     newEvent[name] = e.target.value
     setEvent(newEvent)
   }
@@ -56,6 +60,40 @@ const EventBrito = props => {
     })
   }
 
+  const validateForm = () => {
+    let formError = {}
+    let formValid = true
+
+    if(event.title.length <= 2) {
+      formError.title = ["is too short (minimum is 3 characters)"]
+      formValid = false
+    }
+
+    if(event.location.length === 0) {
+      formError.location = ["can't be blank"]
+      formValid = false
+    }
+
+    if(event.start_datetime.length === 0 ){
+      formError.start_datetime = ["can't be blank"]
+      formValid = false
+    } else if(Date.parse(event.start_datetime) <= Date.now()) {
+      formError.start_datetime = ["can't be in the past"]
+      formValid = false
+    }
+
+    setFormErrors(formError)
+    setFormValid(formValid)
+  }
+
+  React.useEffect(() => {
+    if (initialRender.current) {
+      initialRender.current = false;
+    } else {
+      validateForm();
+    }
+  }, [event])
+
   return (
   <div>
     <FormErrors formErrors = {formErrors} />
@@ -64,7 +102,9 @@ const EventBrito = props => {
       start_datetime={event.start_datetime}
       location={event.location}
       handleInput={handleInputChange}
-      handleSubmit={handleSubmit}/>
+      handleSubmit={handleSubmit}
+      formValid={formValid}
+    />
     <EventList events={events} />
   </div>
   )

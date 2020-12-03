@@ -25,7 +25,12 @@ const EventForm = (props) => (
         value={props.location}
         onChange={props.handleInput}
       />
-      <button type="submit">Create Event</button>
+      <button
+        type="submit"
+        disabled={!props.formValid}
+      >
+        Create Event
+      </button>
     </form>
   </div>
 )
