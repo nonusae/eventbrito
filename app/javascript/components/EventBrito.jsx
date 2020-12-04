@@ -4,16 +4,56 @@ import axios from 'axios'
 
 import EventForm from './EventForm'
 import EventList from './EventsList'
-import FormErrors from './FormErrors'
 
 const EventBrito = props => {
+
+  const eventReducer = (state, action) => {
+    const value = action.payload
+    let isValid = true
+    let errors = []
+    switch(action.type) {
+      case 'title':
+        if (value.length <=2 ) {
+          isValid = false
+          errors.push(["can't be blank"])
+        }
+        return ({
+          ...state, title: { value: value, valid: isValid, errors: errors }
+        })
+      case 'start_datetime':
+        if (value.length === 0) {
+          isValid = false
+          errors.push(["can't be blank"])
+        } else if (Date.parse(value) <= Date.now()) {
+          isValid = false
+          errors.push(["can't be in the past"])
+        }
+
+        return {
+          ...state, start_datetime: { value: value, valid: isValid, errors: errors }
+        }
+      case 'location':
+        if (value.length === 0 ) {
+          isValid = false
+          errors.push(["can't be blank"])
+        }
+
+        return {
+          ...state, location: { value: value, valid: isValid, errors: errors }
+        }
+      default:
+        throw new Error();
+    }
+  }
+
   const [events, setEvents] = React.useState(props.events)
-  const [event, setEvent] = React.useState({
-    title: '',
-    start_datetime: '',
-    location: ''
+
+  const [event, dispatchEvent] = React.useReducer(eventReducer, {
+    title: {value: '', valid: false, errors: []},
+    start_datetime: {value: '', valid: false, errors: []},
+    location: {value: '', valid: false, errors: []},
   })
-  const [formErrors, setFormErrors] = React.useState({});
+
   const [formValid, setFormValid] = React.useState(false);
 
   const initialRender = React.useRef(true);
@@ -33,19 +73,19 @@ const EventBrito = props => {
   const handleInputChange = (e) => {
     e.preventDefault();
     const name = e.target.name;
-    const newEvent = { ...event }
-
-    newEvent[name] = e.target.value
-    setEvent(newEvent)
+    dispatchEvent({payload: e.target.value, type: name})
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    const newEvent = {
+      title: event.title.value, start_datetime: event.start_datetime.value, location: event.location.value
+    }
 
     axios({
       method: 'POST',
       url: '/events',
-      data: { event: event },
+      data: { event: newEvent },
       headers: {
         'X-CSRF-Token': document.querySelector("meta[name=csrf-token]").content
       }
@@ -55,35 +95,14 @@ const EventBrito = props => {
       resetFormErrors();
     })
     .catch(error => {
-      console.log(error.response.data)
       setFormErrors(error.response.data)
     })
   }
 
   const validateForm = () => {
-    let formError = {}
     let formValid = true
-
-    if(event.title.length <= 2) {
-      formError.title = ["is too short (minimum is 3 characters)"]
-      formValid = false
-    }
-
-    if(event.location.length === 0) {
-      formError.location = ["can't be blank"]
-      formValid = false
-    }
-
-    if(event.start_datetime.length === 0 ){
-      formError.start_datetime = ["can't be blank"]
-      formValid = false
-    } else if(Date.parse(event.start_datetime) <= Date.now()) {
-      formError.start_datetime = ["can't be in the past"]
-      formValid = false
-    }
-
-    setFormErrors(formError)
-    setFormValid(formValid)
+    const isValid = event.title.valid && event.location.valid && event.start_datetime.valid
+    setFormValid(isValid)
   }
 
   React.useEffect(() => {
@@ -96,7 +115,6 @@ const EventBrito = props => {
 
   return (
   <div>
-    <FormErrors formErrors = {formErrors} />
     <EventForm
       title={event.title}
       start_datetime={event.start_datetime}
